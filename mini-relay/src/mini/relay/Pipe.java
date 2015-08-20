@@ -1,3 +1,5 @@
+package mini.relay;
+
 
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.UUID;
@@ -21,12 +23,21 @@ public class Pipe {
     private boolean inboundReady = false ;
     private boolean outboundReady = false;
     
+    private UUID pipeUUID = null;
+    
     public Pipe(){
         super();
         // register with a new UUID
+        UUID newUUID = UUID.randomUUID();
+        pipeUUID = newUUID;
+        PipeMap.map.put(newUUID, this);
+
     }
     
     public Pipe(UUID pipeUUID){
+        super();
+        this.pipeUUID = pipeUUID;
+        PipeMap.map.put(pipeUUID, this);
         
     }
     

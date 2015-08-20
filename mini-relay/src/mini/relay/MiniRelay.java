@@ -32,22 +32,23 @@ public class MiniRelay {
         isMajorOnListen = majorListen;
         this.listenAddress = listenAddress;
         this.forwardAddress = forwardAdddress;
-      
+        this.startListening();
     }
     
     private void handleNewlyAcceptedConnection(AsynchronousSocketChannel socket){
-        
+        System.out.println(socket);
     }
     
     private void startListening(){
         try {
+            
             AsynchronousServerSocketChannel serverSocket = AsynchronousServerSocketChannel.open().bind(this.listenAddress);
             serverSocket.accept(null,new CompletionHandler<AsynchronousSocketChannel, Void>() {
 
                 @Override
                 public void completed(AsynchronousSocketChannel result, Void attachment) {
                     serverSocket.accept(null, this);
-                    
+                    handleNewlyAcceptedConnection(result);
                 }
 
                 @Override
@@ -60,12 +61,18 @@ public class MiniRelay {
         } catch (IOException ex) {
             Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
         }
+        try {
+            Thread.sleep(1000000);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     
     
     public static void main(String[] args) {
         // TODO code application logic here
+        new MiniRelay(new InetSocketAddress(6900), null, true);
     }
     
 }
