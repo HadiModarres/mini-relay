@@ -36,12 +36,90 @@ public class MiniRelay {
         this.startListening();
     }
     
+    private void connectMajorSocket(Pipe pipe){
+        try {
+            AsynchronousSocketChannel majorSock = AsynchronousSocketChannel.open();
+            pipe.setMajor(majorSock);
+            majorSock.connect(forwardAddress, pipe, new CompletionHandler<Void, Pipe>() {
+
+                @Override
+                public void completed(Void result, Pipe attachment) {
+                    attachment.setMajorReady();
+                }
+
+                @Override
+                public void failed(Throwable exc, Pipe attachment) {
+                    attachment.close();
+                }
+            });
+            } catch (IOException ex) {
+            Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
+            pipe.close();
+        }
+    }
+    
+    private void inboundConnectionReceived(UUID uuid,AsynchronousSocketChannel socket){
+        Pipe pipe;
+        if (!(PipeMap.PipeExists(uuid))){
+            pipe = new Pipe(uuid);
+            this.connectMajorSocket(pipe);
+        }
+        pipe = PipeMap.map.get(uuid);
+        pipe.setInbound(socket);
+        
+        // do inbound init
+        pipe.setInboundReady();
+    }
+    
+    private void outboundConnectionReceived(UUID uuid,AsynchronousSocketChannel socket){
+        Pipe pipe;
+        if (!(PipeMap.PipeExists(uuid))){
+            pipe = new Pipe(uuid);
+        }
+        pipe = PipeMap.map.get(uuid);
+        pipe.setOutbound(socket);
+        
+        // do outbound init
+        ByteBuffer newBuffer = ByteBuffer.wrap(HeaderFactory.getGetResponseHeader().getBytes());
+        pipe.getOutbound().write(newBuffer, pipe, new CompletionHandler<Integer, Pipe>() {
+            
+            @Override
+            public void completed(Integer result, Pipe attachment) {
+                attachment.setOutboundReady();
+            }
+
+            @Override
+            public void failed(Throwable exc, Pipe attachment) {
+                attachment.close();
+            }
+        });
+        
+    }
+    
+    
     private void handleNewlyAcceptedConnection(AsynchronousSocketChannel socket){
         System.out.println(socket);
         if (isMajorOnListen){
             this.newPipeRequested(socket);
         }else{
-            
+            ByteBuffer bb = ByteBuffer.allocate(1024);
+            socket.read(bb, bb, new CompletionHandler<Integer, ByteBuffer>() {
+
+                @Override
+                public void completed(Integer result, ByteBuffer attachment) {
+                    if (HeaderFactory.isAGetHeader(attachment)){
+                        outboundConnectionReceived(HeaderFactory.getUUIDFromHeader(attachment),socket);
+                    }else{
+                        inboundConnectionReceived(HeaderFactory.getUUIDFromHeader(attachment),socket);
+                    }
+                }
+
+                @Override
+                public void failed(Throwable exc, ByteBuffer attachment) {
+//                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                    System.out.println("couldn't read uuid from socket");
+                }
+            });
         }
     }
     
@@ -70,14 +148,14 @@ public class MiniRelay {
                                 
                                 @Override
                                 public void failed(Throwable exc, Pipe pipe) {
-                                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                                    pipe.close();
                                 }
                             });
                         }
                         
                         @Override
                         public void failed(Throwable exc, Pipe pipe) {
-                            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                            pipe.close();
                         }
                     });
                     
@@ -90,6 +168,7 @@ public class MiniRelay {
             });
         } catch (IOException ex) {
             Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
+            newPipe.close();
         }
             
         
@@ -114,7 +193,7 @@ public class MiniRelay {
 
                         @Override
                         public void failed(Throwable exc, Pipe pipe) {
-                            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                            pipe.close();
                         }
                     });
                     
@@ -123,11 +202,12 @@ public class MiniRelay {
 
                 @Override
                 public void failed(Throwable exc, Pipe pipe) {
-                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                    pipe.close();
                 }
             });
         } catch (IOException ex) {
             Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
+            newPipe.close();
         }
             
     }
@@ -159,13 +239,14 @@ public class MiniRelay {
 
                 @Override
                 public void failed(Throwable exc, Void attachment) {
-                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                    System.out.println("failed to accept new connection");
                 }
             });
             
             
         } catch (IOException ex) {
             Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("open, bind failed");
         }
         try {
             Thread.sleep(1000000);

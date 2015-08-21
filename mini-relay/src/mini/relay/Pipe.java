@@ -1,8 +1,13 @@
 package mini.relay;
 
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -22,6 +27,9 @@ public class Pipe {
     private boolean majorReady = false;
     private boolean inboundReady = false ;
     private boolean outboundReady = false;
+    
+   ByteBuffer inboundToMajor = ByteBuffer.allocate(1024);
+   ByteBuffer majorToOutbound = ByteBuffer.allocate(1024);
     
     private UUID pipeUUID = null;
     
@@ -67,8 +75,102 @@ public class Pipe {
     }
     
     
+    private void readFromInbound(){
+        inboundStream.read(inboundToMajor, null, new CompletionHandler<Integer, ByteBuffer>() {
+
+            @Override
+            public void completed(Integer result, ByteBuffer attachment) {
+                if (result == -1){
+                    inboundSocketDataDone();
+                    return;
+                }
+                attachment.flip();
+                majorStream.write(attachment, attachment, new CompletionHandler<Integer, ByteBuffer>() {
+
+                    @Override
+                    public void completed(Integer result, ByteBuffer attachment) {
+                         attachment.clear();
+                         readFromInbound();
+                    }
+
+                    @Override
+                    public void failed(Throwable exc, ByteBuffer attachment) {
+                        close();
+                    }
+                });
+            }
+
+            @Override
+            public void failed(Throwable exc, ByteBuffer attachment) {
+                close();
+            }
+        });
+    }
+    
+    private void majorSocketDataDone(){
+        this.close();
+    }
+    private void inboundSocketDataDone(){
+        this.close();
+    }
+    
+    public void close(){
+        try {
+            inboundStream.close();
+        } catch (IOException ex) {
+            Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try {
+            outboundStream.close();
+        } catch (IOException ex) {
+            Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try {
+            majorStream.close();
+        } catch (IOException ex) {
+            Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        PipeMap.map.remove(this.pipeUUID); // remove from dictionary
+        System.out.println("pipes remaining in dict: "+PipeMap.map.size());
+    }
+    
+    private void readFromMajor(){
+        majorStream.read(majorToOutbound, null, new CompletionHandler<Integer, ByteBuffer>() {
+
+            @Override
+            public void completed(Integer result, ByteBuffer attachment) {
+                if (result==-1){
+                   majorSocketDataDone();
+                   return;
+                }
+                attachment.flip();
+                outboundStream.write(attachment, attachment, new CompletionHandler<Integer, ByteBuffer>() {
+
+                    @Override
+                    public void completed(Integer result, ByteBuffer attachment) {
+                         attachment.clear();
+                         readFromMajor();
+                    }
+
+                    @Override
+                    public void failed(Throwable exc, ByteBuffer attachment) {
+                        close();
+                    }
+                });
+            }
+
+            @Override
+            public void failed(Throwable exc, ByteBuffer attachment) {
+                close();
+            }
+        });
+    }
+    
     private void initiateRelay(){
         // initiate the relay process
+        this.readFromInbound();
+        this.readFromMajor();
     }
     
     private void checkIfPipeReady(){

@@ -5,6 +5,7 @@
  */
 package mini.relay;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 /**
@@ -20,6 +21,29 @@ public class HeaderFactory {
     }
     public static boolean isAPostMethod(String method){
         return true;
+    }
+    
+    public static UUID getUUIDFromHeader(ByteBuffer bb){
+        if (isAGetHeader(bb)){
+            return getUUIDFromGetMethod(bb);
+        }else{
+            return getUUIDFromPostMethod(bb);
+        }
+    }
+    
+    public static boolean isAGetHeader(ByteBuffer bb){
+        return true;
+    }
+    
+    public static UUID getUUIDFromGetMethod(ByteBuffer bb){
+        return null;
+    }
+    public static UUID getUUIDFromPostMethod(ByteBuffer bb){
+        return null;
+    }
+    
+    public static String getGetResponseHeader(){
+        return "dummy";
     }
     
 }
