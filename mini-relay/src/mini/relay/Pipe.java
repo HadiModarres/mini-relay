@@ -40,6 +40,9 @@ public class Pipe {
         PipeMap.map.put(pipeUUID, this);
         
     }
+    public UUID getUUID(){
+        return pipeUUID;
+    }
     
     public void setInbound(AsynchronousSocketChannel inb){
         this.inboundStream = inb ;
@@ -51,6 +54,19 @@ public class Pipe {
     public void setMajor(AsynchronousSocketChannel maj){
         this.majorStream = maj ;
     }
+    
+    public AsynchronousSocketChannel getInbound(){
+        return this.inboundStream;
+    }
+    
+    public AsynchronousSocketChannel getOutbound(){
+        return this.outboundStream ;
+    }
+    public AsynchronousSocketChannel getMajor(){
+        return this.majorStream;
+    }
+    
+    
     private void initiateRelay(){
         // initiate the relay process
     }

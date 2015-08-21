@@ -8,6 +8,7 @@ package mini.relay;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
@@ -37,6 +38,111 @@ public class MiniRelay {
     
     private void handleNewlyAcceptedConnection(AsynchronousSocketChannel socket){
         System.out.println(socket);
+        if (isMajorOnListen){
+            this.newPipeRequested(socket);
+        }else{
+            
+        }
+    }
+    
+    private void initiateInboundSocket(Pipe newPipe){
+        try {
+            AsynchronousSocketChannel inboundSock = AsynchronousSocketChannel.open();
+            newPipe.setInbound(inboundSock);
+            inboundSock.connect(forwardAddress, newPipe, new CompletionHandler<Void, Pipe>() {
+
+                @Override
+                public void completed(Void result, Pipe pipe) {
+                    System.out.println("connected  UUID: "+newPipe.getUUID());
+                    ByteBuffer newBuffer = ByteBuffer.wrap(HeaderFactory.getHttpGetMethodFromUUID(newPipe.getUUID()).getBytes());
+                    pipe.getInbound().write(newBuffer, pipe, new CompletionHandler<Integer, Pipe>() {
+                        
+                        @Override
+                        public void completed(Integer result, Pipe pipe) {
+                            ByteBuffer dummyBuffer = ByteBuffer.allocate(1024);
+                            pipe.getInbound().read(dummyBuffer, pipe, new CompletionHandler<Integer, Pipe>() {
+                                
+                                @Override
+                                public void completed(Integer result, Pipe pipe) {
+                                    System.out.println("GET response received, inbound is ready for relay");
+                                    pipe.setInboundReady();
+                                }
+                                
+                                @Override
+                                public void failed(Throwable exc, Pipe pipe) {
+                                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                                }
+                            });
+                        }
+                        
+                        @Override
+                        public void failed(Throwable exc, Pipe pipe) {
+                            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                        }
+                    });
+                    
+                }
+
+                @Override
+                public void failed(Throwable exc, Pipe pipe) {
+                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                }
+            });
+        } catch (IOException ex) {
+            Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
+        }
+            
+        
+    }
+    
+    private void initiateOutboundSocket(Pipe newPipe){
+        try {
+            AsynchronousSocketChannel outboundSocket = AsynchronousSocketChannel.open();
+            newPipe.setOutbound(outboundSocket);
+            outboundSocket.connect(forwardAddress, newPipe, new CompletionHandler<Void, Pipe>() {
+
+                @Override
+                public void completed(Void result, Pipe pipe) {
+                    System.out.println("connected  outbound UUID: "+newPipe.getUUID());
+                    ByteBuffer newBuffer = ByteBuffer.wrap(HeaderFactory.getHttpPostMethodFromUUID(newPipe.getUUID()).getBytes());
+                    pipe.getOutbound().write(newBuffer, pipe, new CompletionHandler<Integer, Pipe>() {
+
+                        @Override
+                        public void completed(Integer result, Pipe pipe) {
+                            pipe.setOutboundReady();
+                        }
+
+                        @Override
+                        public void failed(Throwable exc, Pipe pipe) {
+                            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                        }
+                    });
+                    
+                
+                }
+
+                @Override
+                public void failed(Throwable exc, Pipe pipe) {
+                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                }
+            });
+        } catch (IOException ex) {
+            Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
+        }
+            
+    }
+    
+    private void newPipeRequested(AsynchronousSocketChannel majorSocket){
+        
+            Pipe newPipe = new Pipe();
+            newPipe.setMajor(majorSocket);
+            newPipe.setMajorReady();
+            this.initiateInboundSocket(newPipe);
+            this.initiateOutboundSocket(newPipe);
+        
+        
+        
+        
     }
     
     private void startListening(){
@@ -72,7 +178,7 @@ public class MiniRelay {
     
     public static void main(String[] args) {
         // TODO code application logic here
-        new MiniRelay(new InetSocketAddress(6900), null, true);
+        new MiniRelay(new InetSocketAddress(6900), new InetSocketAddress("www.google.com", 80), true);
     }
     
 }
