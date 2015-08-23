@@ -59,6 +59,7 @@ public class MiniRelay {
     }
     
     private void inboundConnectionReceived(UUID uuid,AsynchronousSocketChannel socket){
+        System.out.println("inbound received "+uuid);
         Pipe pipe;
         if (!(PipeMap.PipeExists(uuid))){
             pipe = new Pipe(uuid);
@@ -72,6 +73,7 @@ public class MiniRelay {
     }
     
     private void outboundConnectionReceived(UUID uuid,AsynchronousSocketChannel socket){
+        System.out.println("outbound received "+uuid);
         Pipe pipe;
         if (!(PipeMap.PipeExists(uuid))){
             pipe = new Pipe(uuid);
@@ -131,7 +133,7 @@ public class MiniRelay {
 
                 @Override
                 public void completed(Void result, Pipe pipe) {
-                    System.out.println("connected  UUID: "+newPipe.getUUID());
+                    System.out.println("inbound connected  UUID: "+newPipe.getUUID());
                     ByteBuffer newBuffer = HeaderFactory.getHttpGetMethodFromUUID(newPipe.getUUID());
                     pipe.getInbound().write(newBuffer, pipe, new CompletionHandler<Integer, Pipe>() {
                         
@@ -182,7 +184,7 @@ public class MiniRelay {
 
                 @Override
                 public void completed(Void result, Pipe pipe) {
-                    System.out.println("connected  outbound UUID: "+newPipe.getUUID());
+                    System.out.println("outbound connected UUID: "+newPipe.getUUID());
                     ByteBuffer newBuffer = HeaderFactory.getHttpPostMethodFromUUID(newPipe.getUUID());
                     pipe.getOutbound().write(newBuffer, pipe, new CompletionHandler<Integer, Pipe>() {
 
@@ -259,7 +261,7 @@ public class MiniRelay {
     
     public static void main(String[] args) {
         // TODO code application logic here
-        new MiniRelay(new InetSocketAddress(6900), new InetSocketAddress("www.google.com", 80), true);
+        new MiniRelay(new InetSocketAddress(6900), new InetSocketAddress("127.0.0.1",7000), true);
 //        UUID u1 = UUID.randomUUID();
 //        ByteBuffer getMethod = HeaderFactory.getHttpPostMethodFromUUID(u1);
 //        UUID u2 = HeaderFactory.getUUIDFromPostMethod(getMethod);

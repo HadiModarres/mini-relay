@@ -45,6 +45,7 @@ public class HeaderFactory {
         return UUID.fromString(uuidString);
     }
     public static UUID getUUIDFromPostMethod(ByteBuffer bb){
+        byte[] h= bb.array();
         String headerString = StandardCharsets.US_ASCII.decode(bb).toString();
         String uuidString = (headerString.split(".iso"))[0].split("/")[1];
         return UUID.fromString(uuidString);

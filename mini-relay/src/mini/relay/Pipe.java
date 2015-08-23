@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  *
  * @author hadi
  */
-public class Pipe {
+public class  Pipe {
     private AsynchronousSocketChannel inboundStream= null;
     private AsynchronousSocketChannel outboundStream=null ;
     private AsynchronousSocketChannel majorStream = null ;
@@ -76,7 +76,7 @@ public class Pipe {
     
     
     private void readFromInbound(){
-        inboundStream.read(inboundToMajor, null, new CompletionHandler<Integer, ByteBuffer>() {
+        inboundStream.read(inboundToMajor, inboundToMajor, new CompletionHandler<Integer, ByteBuffer>() {
 
             @Override
             public void completed(Integer result, ByteBuffer attachment) {
@@ -136,7 +136,7 @@ public class Pipe {
     }
     
     private void readFromMajor(){
-        majorStream.read(majorToOutbound, null, new CompletionHandler<Integer, ByteBuffer>() {
+        majorStream.read(majorToOutbound, majorToOutbound, new CompletionHandler<Integer, ByteBuffer>() {
 
             @Override
             public void completed(Integer result, ByteBuffer attachment) {
@@ -169,6 +169,7 @@ public class Pipe {
     
     private void initiateRelay(){
         // initiate the relay process
+        System.out.println("initiating relay");
         this.readFromInbound();
         this.readFromMajor();
     }
@@ -179,16 +180,24 @@ public class Pipe {
     }
     
     public void setInboundReady(){
+        synchronized(this){
         this.inboundReady = true ;
         checkIfPipeReady();
+        }
     }
     public void setOutboundReady(){
+        synchronized(this){
+
         this.outboundReady = true ;
         checkIfPipeReady();
+        }
     }
     public  void setMajorReady(){
+        synchronized(this){
+
         this.majorReady = true ;
         checkIfPipeReady();
+        }
     }
     
 }
