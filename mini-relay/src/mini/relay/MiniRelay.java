@@ -80,7 +80,7 @@ public class MiniRelay {
         pipe.setOutbound(socket);
         
         // do outbound init
-        ByteBuffer newBuffer = ByteBuffer.wrap(HeaderFactory.getGetResponseHeader().getBytes());
+        ByteBuffer newBuffer = HeaderFactory.getGetResponseHeader();
         pipe.getOutbound().write(newBuffer, pipe, new CompletionHandler<Integer, Pipe>() {
             
             @Override
@@ -132,7 +132,7 @@ public class MiniRelay {
                 @Override
                 public void completed(Void result, Pipe pipe) {
                     System.out.println("connected  UUID: "+newPipe.getUUID());
-                    ByteBuffer newBuffer = ByteBuffer.wrap(HeaderFactory.getHttpGetMethodFromUUID(newPipe.getUUID()).getBytes());
+                    ByteBuffer newBuffer = HeaderFactory.getHttpGetMethodFromUUID(newPipe.getUUID());
                     pipe.getInbound().write(newBuffer, pipe, new CompletionHandler<Integer, Pipe>() {
                         
                         @Override
@@ -183,7 +183,7 @@ public class MiniRelay {
                 @Override
                 public void completed(Void result, Pipe pipe) {
                     System.out.println("connected  outbound UUID: "+newPipe.getUUID());
-                    ByteBuffer newBuffer = ByteBuffer.wrap(HeaderFactory.getHttpPostMethodFromUUID(newPipe.getUUID()).getBytes());
+                    ByteBuffer newBuffer = HeaderFactory.getHttpPostMethodFromUUID(newPipe.getUUID());
                     pipe.getOutbound().write(newBuffer, pipe, new CompletionHandler<Integer, Pipe>() {
 
                         @Override
@@ -260,6 +260,11 @@ public class MiniRelay {
     public static void main(String[] args) {
         // TODO code application logic here
         new MiniRelay(new InetSocketAddress(6900), new InetSocketAddress("www.google.com", 80), true);
+//        UUID u1 = UUID.randomUUID();
+//        ByteBuffer getMethod = HeaderFactory.getHttpPostMethodFromUUID(u1);
+//        UUID u2 = HeaderFactory.getUUIDFromPostMethod(getMethod);
+//        boolean isget = HeaderFactory.isAGetHeader(getMethod);
+//        System.out.println("done");
     }
     
 }
