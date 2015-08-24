@@ -32,20 +32,22 @@ public class  Pipe {
    ByteBuffer majorToOutbound = ByteBuffer.allocate(1024);
     
     private UUID pipeUUID = null;
+    private boolean initiated = false ;
+    
     
     public Pipe(){
         super();
         // register with a new UUID
         UUID newUUID = UUID.randomUUID();
         pipeUUID = newUUID;
-        PipeMap.map.put(newUUID, this);
+//        PipeMap.map.put(newUUID, this);
 
     }
     
     public Pipe(UUID pipeUUID){
         super();
         this.pipeUUID = pipeUUID;
-        PipeMap.map.put(pipeUUID, this);
+//        PipeMap.map.put(pipeUUID, this);
         
     }
     public UUID getUUID(){
@@ -102,13 +104,14 @@ public class  Pipe {
 
             @Override
             public void failed(Throwable exc, ByteBuffer attachment) {
+                System.out.println(exc);
                 close();
             }
         });
     }
     
     private void majorSocketDataDone(){
-        this.close();
+  //      this.close();
     }
     private void inboundSocketDataDone(){
         this.close();
@@ -131,8 +134,8 @@ public class  Pipe {
             Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        PipeMap.map.remove(this.pipeUUID); // remove from dictionary
-        System.out.println("pipes remaining in dict: "+PipeMap.map.size());
+//        PipeMap.map.remove(this.pipeUUID); // remove from dictionary
+//        System.out.println("pipes remaining in dict: "+PipeMap.map.size());
     }
     
     private void readFromMajor(){
@@ -169,9 +172,14 @@ public class  Pipe {
     
     private void initiateRelay(){
         // initiate the relay process
+        synchronized(this){
+            if (initiated)
+                return;
+        initiated = true ;
         System.out.println("initiating relay");
         this.readFromInbound();
         this.readFromMajor();
+        }
     }
     
     private void checkIfPipeReady(){

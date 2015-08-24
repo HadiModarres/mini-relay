@@ -14,9 +14,10 @@ import java.util.UUID;
  * @author hadi
  */
 public class PipeMap {
-    public static HashMap<UUID,Pipe> map = new HashMap<>();
-    public static boolean PipeExists(UUID id){
-        return map.containsKey(id);
+    public HashMap<UUID,Pipe> map = new HashMap<>();
+    public boolean PipeExists(UUID id){
+        boolean f = map.containsKey(id);
+        return f;
     }
     
 }

@@ -26,6 +26,8 @@ public class MiniRelay {
     /**
      * @param args the command line arguments
      */
+    private PipeMap pipeMap=new PipeMap();
+    private String lockStr = "lock";
     private boolean isMajorOnListen = false;
     private InetSocketAddress listenAddress=null;
     private InetSocketAddress forwardAddress=null;
@@ -61,13 +63,14 @@ public class MiniRelay {
     private void inboundConnectionReceived(UUID uuid,AsynchronousSocketChannel socket){
         System.out.println("inbound received "+uuid);
         Pipe pipe;
-        if (!(PipeMap.PipeExists(uuid))){
+        if (!(pipeMap.PipeExists(uuid))){
             pipe = new Pipe(uuid);
+            pipeMap.map.put(uuid, pipe);
             this.connectMajorSocket(pipe);
         }
-        pipe = PipeMap.map.get(uuid);
+        pipe = pipeMap.map.get(uuid);
         pipe.setInbound(socket);
-        
+       
         // do inbound init
         pipe.setInboundReady();
     }
@@ -75,10 +78,13 @@ public class MiniRelay {
     private void outboundConnectionReceived(UUID uuid,AsynchronousSocketChannel socket){
         System.out.println("outbound received "+uuid);
         Pipe pipe;
-        if (!(PipeMap.PipeExists(uuid))){
+        if (!(pipeMap.PipeExists(uuid))){
             pipe = new Pipe(uuid);
+            pipeMap.map.put(uuid, pipe);
+            this.connectMajorSocket(pipe);
+
         }
-        pipe = PipeMap.map.get(uuid);
+        pipe = pipeMap.map.get(uuid);
         pipe.setOutbound(socket);
         
         // do outbound init
@@ -98,8 +104,8 @@ public class MiniRelay {
         
     }
     
-    
-    private void handleNewlyAcceptedConnection(AsynchronousSocketChannel socket){
+   
+    private synchronized void handleNewlyAcceptedConnection(AsynchronousSocketChannel socket){
         System.out.println(socket);
         if (isMajorOnListen){
             this.newPipeRequested(socket);
@@ -109,6 +115,8 @@ public class MiniRelay {
 
                 @Override
                 public void completed(Integer result, ByteBuffer attachment) {
+//                    MiniRelay.this.prh();
+                    bb.flip();
                     if (HeaderFactory.isAGetHeader(attachment)){
                         outboundConnectionReceived(HeaderFactory.getUUIDFromHeader(attachment),socket);
                     }else{
@@ -123,6 +131,7 @@ public class MiniRelay {
                 }
             });
         }
+        
     }
     
     private void initiateInboundSocket(Pipe newPipe){
@@ -217,6 +226,7 @@ public class MiniRelay {
     private void newPipeRequested(AsynchronousSocketChannel majorSocket){
         
             Pipe newPipe = new Pipe();
+            
             newPipe.setMajor(majorSocket);
             newPipe.setMajorReady();
             this.initiateInboundSocket(newPipe);
@@ -235,8 +245,9 @@ public class MiniRelay {
 
                 @Override
                 public void completed(AsynchronousSocketChannel result, Void attachment) {
+                    MiniRelay.this.handleNewlyAcceptedConnection(result);
                     serverSocket.accept(null, this);
-                    handleNewlyAcceptedConnection(result);
+                    
                 }
 
                 @Override
@@ -250,11 +261,11 @@ public class MiniRelay {
             Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
             System.out.println("open, bind failed");
         }
-        try {
-            Thread.sleep(1000000);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try {
+//            Thread.sleep(1000000);
+//        } catch (InterruptedException ex) {
+//            Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
+//        }
     }
     
     
