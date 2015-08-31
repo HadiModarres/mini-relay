@@ -30,7 +30,7 @@ public class DataSendTest {
     private int passedClientCount= 0;
     private RandomDataPool dataPool = new RandomDataPool();
     private Digester digester = new Digester();
-    private int maximumDataSize = 1024;
+    private int maximumDataSize = 128*1024*1024;
  //   private InetSocketAddress entranceAddress= new InetSocketAddress;
     
     private int entrancePort=10000;
@@ -89,7 +89,7 @@ public class DataSendTest {
         
     }
     
-    private void readDataFromSocket(AsynchronousSocketChannel socket,ByteBuffer bb){
+    private synchronized void readDataFromSocket(AsynchronousSocketChannel socket,ByteBuffer bb){
         socket.read(bb, null, new CompletionHandler<Integer, Void>() {
 
             @Override
@@ -109,13 +109,21 @@ public class DataSendTest {
     }
     
     private synchronized void processReceivedData(ByteBuffer bb){
-        if (digester.hasDigestForData(bb.array())){
+        byte[] ext = new byte[bb.remaining()];
+        bb.get(ext);
+        if (digester.hasDigestForData(ext)){
+            
             passedClientCount++;
-            digester.remove(digester.getDigestForData(bb.array()));
+            System.out.println("passed clients: "+passedClientCount);
+            digester.remove(digester.getDigestForData(ext));
             if (passedClientCount == clientCount){
                 DataSendTest.this.notify();
             }
+        }else{
+            fail("data with this digest doesn't exist");
+
         }
+        
     }
     
     @Test
@@ -129,6 +137,7 @@ public class DataSendTest {
         this.runServer();
         try {
             this.wait();
+            assertEquals(1, 1);
         } catch (InterruptedException ex) {
             Logger.getLogger(DataSendTest.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -139,13 +148,15 @@ public class DataSendTest {
 
             @Override
             public void completed(Integer result, ByteBuffer attachment) {
-                
+                System.out.println("what");
                 if (attachment.position()<attachment.limit()) {
                     flushBufferToSocket(socket, attachment);
                 }else{
                     try {
                         socket.shutdownInput();
                         socket.shutdownOutput();
+//                        socket.close();
+                    
                     } catch (IOException ex) {
                         Logger.getLogger(DataSendTest.class.getName()).log(Level.SEVERE, null, ex);
                     }

@@ -107,13 +107,13 @@ public class ConnectivityTest {
 
                       @Override
                       public void completed(Integer result, Void attachment) {
-//                         try {
-//                              s1.shutdownInput();
-//                              s1.shutdownOutput();
-//                              s1.close();
-//                          } catch (IOException ex) {
-//                              Logger.getLogger(ConnectivityTest.class.getName()).log(Level.SEVERE, null, ex);
-//                         }
+                         try {
+                              s1.shutdownInput();
+                              s1.shutdownOutput();
+                              s1.close();
+                          } catch (IOException ex) {
+                              Logger.getLogger(ConnectivityTest.class.getName()).log(Level.SEVERE, null, ex);
+                         }
                       }
 
                       @Override

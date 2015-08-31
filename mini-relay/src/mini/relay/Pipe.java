@@ -34,6 +34,8 @@ public class  Pipe {
     private UUID pipeUUID = null;
     private boolean initiated = false ;
     
+    private boolean inboundDataDone = false ;
+    private boolean majorDataDone = false ;
     
     public Pipe(){
         super();
@@ -111,10 +113,34 @@ public class  Pipe {
     }
     
     private void majorSocketDataDone(){
-  //      this.close();
+//        this.close();
+        try {
+                    majorDataDone = true;
+
+            majorStream.shutdownInput();
+            outboundStream.shutdownOutput();
+            this.checkPipeState();
+        } catch (IOException ex) {
+            Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
     }
     private void inboundSocketDataDone(){
-        this.close();
+        try {
+            //        this.close();
+            inboundDataDone = true;
+            inboundStream.shutdownInput();
+            majorStream.shutdownOutput();
+            this.checkPipeState();
+        } catch (IOException ex) {
+            Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
+        }
+            
+    }
+    
+    private void checkPipeState(){
+        if (inboundDataDone && majorDataDone)
+            this.close();
     }
     
     public void close(){
@@ -177,6 +203,16 @@ public class  Pipe {
                 return;
         initiated = true ;
         System.out.println("initiating relay");
+            try {
+                inboundStream.shutdownOutput();
+            } catch (IOException ex) {
+                Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            try {
+                outboundStream.shutdownInput();
+            } catch (IOException ex) {
+                Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
+            }
         this.readFromInbound();
         this.readFromMajor();
         }

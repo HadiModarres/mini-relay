@@ -1,6 +1,8 @@
 
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,21 +18,21 @@ import java.util.logging.Logger;
  * @author hadi
  */
 public class Digester {
-    private HashSet<byte[]> digested;
+    private HashSet<ByteBuffer> digested;
     public Digester(){
         digested = new HashSet<>();
     }
     public void digest(byte[] data){
         try {
             byte[] digest = MessageDigest.getInstance("MD5").digest(data);
-            digested.add(digest);
+            digested.add(ByteBuffer.wrap(digest));
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(Digester.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
     public void remove(byte[] digest){
-        digested.remove(digest);
+        digested.remove(ByteBuffer.wrap(digest));
     }
     public boolean isEmpty(){
         return digested.isEmpty();
@@ -39,7 +41,8 @@ public class Digester {
     public boolean hasDigestForData(byte[] data){
         try {
             byte[] digest = MessageDigest.getInstance("MD5").digest(data);
-            return digested.contains(digest);
+            boolean answer = digested.contains(ByteBuffer.wrap(digest));
+            return answer;
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(Digester.class.getName()).log(Level.SEVERE, null, ex);
         }
