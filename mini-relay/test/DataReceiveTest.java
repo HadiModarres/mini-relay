@@ -24,19 +24,18 @@ import static org.junit.Assert.*;
  *
  * @author hadi
  */
-public class DataSendTest {
-    
-    private int clientCount=60;
+public class DataReceiveTest {
+    private int clientCount=40;
     private int passedClientCount= 0;
     private RandomDataPool dataPool = new RandomDataPool();
     private Digester digester = new Digester();
-    private int maximumDataSize = 1024*64;
+    private int maximumDataSize = 4*1024*1024;
  //   private InetSocketAddress entranceAddress= new InetSocketAddress;
     
     private int entrancePort=10000;
     private int exitPort =10002;
     
-    public DataSendTest() {
+    public DataReceiveTest() {
     }
     
     @BeforeClass
@@ -70,10 +69,14 @@ public class DataSendTest {
 
                 @Override
                 public void completed(AsynchronousSocketChannel result, Void attachment) {
-                    ByteBuffer bb = ByteBuffer.allocate(maximumDataSize);
-                    readDataFromSocket(result,bb);
+                    
+                    byte[] data = dataPool.pop();
+                    digester.digest(data);
+                    sendData(result,data);
                     
                     serverSocket.accept(null, this);
+
+                    
                     
                 }
 
@@ -117,7 +120,7 @@ public class DataSendTest {
             System.out.println("passed clients: "+passedClientCount);
             digester.remove(digester.getDigestForData(ext));
             if (passedClientCount == clientCount){
-                DataSendTest.this.notify();
+                DataReceiveTest.this.notify();
             }
         }else{
             fail("data with this digest doesn't exist");
@@ -127,12 +130,35 @@ public class DataSendTest {
     }
     
     @Test
-    public synchronized void dataSendTest() {
+    public synchronized void dataReceiveTest() {
         for (int i=0;i<this.clientCount;i++){
-            byte[] data = dataPool.pop();
             
-            digester.digest(data);
-            this.sendData(data);
+            try{
+            AsynchronousSocketChannel socket = AsynchronousSocketChannel.open();
+            
+            socket.connect(new InetSocketAddress("127.0.0.1", entrancePort), null, new CompletionHandler<Void, Void>() {
+
+                @Override
+                public void completed(Void result, Void attachment) {
+                    ByteBuffer bb = ByteBuffer.allocate(maximumDataSize);
+                    readDataFromSocket(socket,bb);
+                }
+
+                @Override
+                public void failed(Throwable exc, Void attachment) {
+                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                }
+            });
+    
+            }catch(IOException ioe){
+                System.err.println(ioe.getMessage());
+            }
+            
+//            ByteBuffer bb = ByteBuffer.allocate(maximumDataSize);
+//            readDataFromSocket(result,bb);
+//            
+            
+            
             
         }
         this.runServer();
@@ -176,35 +202,18 @@ public class DataSendTest {
         });
     }
     
-    private synchronized void sendData(byte[] data){
+    private synchronized void sendData(AsynchronousSocketChannel socket,byte[] data){
         
-        try {
-            AsynchronousSocketChannel socket = AsynchronousSocketChannel.open();
-            socket.connect(new InetSocketAddress("127.0.0.1", entrancePort), null, new CompletionHandler<Void, Void>() {
-
-                @Override
-                public void completed(Void result, Void attachment) {
-//                    try {
-//                        Thread.sleep(2000);
-//                    } catch (InterruptedException ex) {
-//                        Logger.getLogger(DataSendTest.class.getName()).log(Level.SEVERE, null, ex);
-//                    }
-                    ByteBuffer bb = ByteBuffer.wrap(data);
-                    flushBufferToSocket(socket, bb);
-                }
-
-                @Override
-                public void failed(Throwable exc, Void attachment) {
-                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-                }
-            });
+        ByteBuffer bb = ByteBuffer.wrap(data);
+        flushBufferToSocket(socket, bb);
             
-        } catch (IOException ex) {
-            Logger.getLogger(DataSendTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        
     }
     
-    
-    
-    
+
+    // TODO add test methods here.
+    // The methods must be annotated with annotation @Test. For example:
+    //
+    // @Test
+    // public void hello() {}
 }

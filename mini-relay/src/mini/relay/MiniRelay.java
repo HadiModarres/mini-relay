@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import static java.net.SocketOptions.SO_RCVBUF;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -42,6 +43,7 @@ public class MiniRelay {
     private void connectMajorSocket(Pipe pipe){
         try {
             AsynchronousSocketChannel majorSock = AsynchronousSocketChannel.open();
+            majorSock.setOption(StandardSocketOptions.TCP_NODELAY, true);
             pipe.setMajor(majorSock);
             majorSock.connect(forwardAddress, pipe, new CompletionHandler<Void, Pipe>() {
 
@@ -111,6 +113,8 @@ public class MiniRelay {
         if (isMajorOnListen){
             this.newPipeRequested(socket);
         }else{
+         //   ByteBuffer bb = ByteBuffer.allocate(1024);
+
             ByteBuffer bb = ByteBuffer.allocate(HeaderFactory.getPostHeaderSize());
             socket.read(bb, bb, new CompletionHandler<Integer, ByteBuffer>() {
 
@@ -138,6 +142,8 @@ public class MiniRelay {
     private void initiateInboundSocket(Pipe newPipe){
         try {
             AsynchronousSocketChannel inboundSock = AsynchronousSocketChannel.open();
+            inboundSock.setOption(StandardSocketOptions.TCP_NODELAY, true);
+
             newPipe.setInbound(inboundSock);
             inboundSock.connect(forwardAddress, newPipe, new CompletionHandler<Void, Pipe>() {
 
@@ -189,6 +195,8 @@ public class MiniRelay {
     private void initiateOutboundSocket(Pipe newPipe){
         try {
             AsynchronousSocketChannel outboundSocket = AsynchronousSocketChannel.open();
+            outboundSocket.setOption(StandardSocketOptions.TCP_NODELAY, true);
+
             newPipe.setOutbound(outboundSocket);
             outboundSocket.connect(forwardAddress, newPipe, new CompletionHandler<Void, Pipe>() {
 
