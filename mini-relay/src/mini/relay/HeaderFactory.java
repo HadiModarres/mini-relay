@@ -22,10 +22,17 @@ public class HeaderFactory {
         String headerString = "POST /"+uuid.toString()+".iso HTTP/1.0\r\ncontent-type:application/octet-stream\r\nhost: https://importexport.amazonaws.com\r\ncontent-length:20756565\r\n\r\n";
         return ByteBuffer.wrap(headerString.getBytes(StandardCharsets.US_ASCII));
     }
+    
+    public static int getPostHeaderSize(){
+        return getHttpPostMethodFromUUID(UUID.randomUUID()).capacity();
+    }
 //    public static boolean isAPostMethod(ByteBuffer bb){
 //        return true;
 //    }
 //    
+
+
+    
     public static UUID getUUIDFromHeader(ByteBuffer bb){
         if (isAGetHeader(bb)){
             return getUUIDFromGetMethod(bb);

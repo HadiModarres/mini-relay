@@ -24,6 +24,7 @@ public class Digester {
     }
     public void digest(byte[] data){
         try {
+            System.out.println("digesting data, length: "+data.length);
             byte[] digest = MessageDigest.getInstance("MD5").digest(data);
             digested.add(ByteBuffer.wrap(digest));
         } catch (NoSuchAlgorithmException ex) {
@@ -40,6 +41,7 @@ public class Digester {
     
     public boolean hasDigestForData(byte[] data){
         try {
+            System.out.println("does have the with length: "+data.length);
             byte[] digest = MessageDigest.getInstance("MD5").digest(data);
             boolean answer = digested.contains(ByteBuffer.wrap(digest));
             return answer;

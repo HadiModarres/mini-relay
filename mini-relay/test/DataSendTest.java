@@ -26,11 +26,11 @@ import static org.junit.Assert.*;
  */
 public class DataSendTest {
     
-    private int clientCount=1;
+    private int clientCount=5;
     private int passedClientCount= 0;
     private RandomDataPool dataPool = new RandomDataPool();
     private Digester digester = new Digester();
-    private int maximumDataSize = 128*1024*1024;
+    private int maximumDataSize = 1024*1024;
  //   private InetSocketAddress entranceAddress= new InetSocketAddress;
     
     private int entrancePort=10000;
@@ -130,6 +130,7 @@ public class DataSendTest {
     public synchronized void dataSendTest() {
         for (int i=0;i<this.clientCount;i++){
             byte[] data = dataPool.pop();
+            
             digester.digest(data);
             this.sendData(data);
             
@@ -144,18 +145,20 @@ public class DataSendTest {
     }
     
     private void flushBufferToSocket(AsynchronousSocketChannel socket, ByteBuffer buffer){
+        
         socket.write(buffer, buffer, new CompletionHandler<Integer, ByteBuffer>() {
 
             @Override
             public void completed(Integer result, ByteBuffer attachment) {
                 System.out.println("what");
-                if (attachment.position()<attachment.limit()) {
-                    flushBufferToSocket(socket, attachment);
+                if (attachment.hasRemaining()) {
+    //                flushBufferToSocket(socket, attachment);
+                    socket.write(attachment, attachment, this);
                 }else{
                     try {
                         socket.shutdownInput();
                         socket.shutdownOutput();
-//                        socket.close();
+                        socket.close();
                     
                     } catch (IOException ex) {
                         Logger.getLogger(DataSendTest.class.getName()).log(Level.SEVERE, null, ex);
@@ -170,13 +173,19 @@ public class DataSendTest {
         });
     }
     
-    private void sendData(byte[] data){
+    private synchronized void sendData(byte[] data){
+        
         try {
             AsynchronousSocketChannel socket = AsynchronousSocketChannel.open();
             socket.connect(new InetSocketAddress("127.0.0.1", entrancePort), null, new CompletionHandler<Void, Void>() {
 
                 @Override
                 public void completed(Void result, Void attachment) {
+//                    try {
+//                        Thread.sleep(2000);
+//                    } catch (InterruptedException ex) {
+//                        Logger.getLogger(DataSendTest.class.getName()).log(Level.SEVERE, null, ex);
+//                    }
                     ByteBuffer bb = ByteBuffer.wrap(data);
                     flushBufferToSocket(socket, bb);
                 }

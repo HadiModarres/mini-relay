@@ -93,8 +93,12 @@ public class  Pipe {
 
                     @Override
                     public void completed(Integer result, ByteBuffer attachment) {
+                         if (attachment.hasRemaining()){
+                             majorStream.write(attachment, attachment, this);
+                         }else{
                          attachment.clear();
                          readFromInbound();
+                         }
                     }
 
                     @Override
@@ -178,8 +182,14 @@ public class  Pipe {
 
                     @Override
                     public void completed(Integer result, ByteBuffer attachment) {
+                       
+                        if (attachment.hasRemaining()){
+                            outboundStream.write(attachment, attachment, this);
+                            
+                        }else{
                          attachment.clear();
                          readFromMajor();
+                        }
                     }
 
                     @Override
@@ -203,33 +213,33 @@ public class  Pipe {
                 return;
         initiated = true ;
         System.out.println("initiating relay");
-            try {
-                inboundStream.shutdownOutput();
-            } catch (IOException ex) {
-                Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            try {
-                outboundStream.shutdownInput();
-            } catch (IOException ex) {
-                Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
-            }
+//            try {
+//                inboundStream.shutdownOutput();
+//            } catch (IOException ex) {
+//                Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//            try {
+//                outboundStream.shutdownInput();
+//            } catch (IOException ex) {
+//                Logger.getLogger(Pipe.class.getName()).log(Level.SEVERE, null, ex);
+//            }
         this.readFromInbound();
         this.readFromMajor();
         }
     }
     
-    private void checkIfPipeReady(){
+    private synchronized void checkIfPipeReady(){
         if (inboundReady && outboundReady && majorReady)
             this.initiateRelay();
     }
     
-    public void setInboundReady(){
+    public synchronized void setInboundReady(){
         synchronized(this){
         this.inboundReady = true ;
         checkIfPipeReady();
         }
     }
-    public void setOutboundReady(){
+    public synchronized void setOutboundReady(){
         synchronized(this){
 
         this.outboundReady = true ;

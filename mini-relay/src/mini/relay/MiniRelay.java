@@ -8,6 +8,7 @@ package mini.relay;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import static java.net.SocketOptions.SO_RCVBUF;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -110,7 +111,7 @@ public class MiniRelay {
         if (isMajorOnListen){
             this.newPipeRequested(socket);
         }else{
-            ByteBuffer bb = ByteBuffer.allocate(1024);
+            ByteBuffer bb = ByteBuffer.allocate(HeaderFactory.getPostHeaderSize());
             socket.read(bb, bb, new CompletionHandler<Integer, ByteBuffer>() {
 
                 @Override
@@ -199,7 +200,11 @@ public class MiniRelay {
 
                         @Override
                         public void completed(Integer result, Pipe pipe) {
+//                            if (newBuffer.hasRemaining()){
+//                                pipe.getOutbound().write(newBuffer, pipe, this);
+//                            }else{
                             pipe.setOutboundReady();
+//                            }
                         }
 
                         @Override
@@ -229,9 +234,9 @@ public class MiniRelay {
             
             newPipe.setMajor(majorSocket);
             newPipe.setMajorReady();
-            this.initiateInboundSocket(newPipe);
+           
             this.initiateOutboundSocket(newPipe);
-        
+         this.initiateInboundSocket(newPipe);
         
         
         
