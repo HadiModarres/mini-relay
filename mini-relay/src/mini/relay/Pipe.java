@@ -88,7 +88,10 @@ public class  Pipe {
                     inboundSocketDataDone();
                     return;
                 }
+                                                
                 attachment.flip();
+                ByteOperations.reverse(attachment.array());
+                
                 majorStream.write(attachment, attachment, new CompletionHandler<Integer, ByteBuffer>() {
 
                     @Override
@@ -178,6 +181,7 @@ public class  Pipe {
                    return;
                 }
                 attachment.flip();
+                ByteOperations.reverse(attachment.array());
                 outboundStream.write(attachment, attachment, new CompletionHandler<Integer, ByteBuffer>() {
 
                     @Override

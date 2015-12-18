@@ -181,7 +181,8 @@ public class MiniRelay {
 
                 @Override
                 public void failed(Throwable exc, Pipe pipe) {
-                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                    System.out.println("failed to connect ");
+                    pipe.close();
                 }
             });
         } catch (IOException ex) {
@@ -285,12 +286,20 @@ public class MiniRelay {
     
     public static void main(String[] args) {
         // TODO code application logic here
-        new MiniRelay(new InetSocketAddress(6900), new InetSocketAddress("127.0.0.1",7000), true);
+        
+        new MiniRelay(new InetSocketAddress(Integer.parseInt(args[0])),new InetSocketAddress(args[1],Integer.parseInt(args[2])), true);
+        
+        try {
+            Thread.sleep(342234234);
+//        new MiniRelay(new InetSocketAddress(6900), new InetSocketAddress("127.0.0.1",7000), true);
 //        UUID u1 = UUID.randomUUID();
 //        ByteBuffer getMethod = HeaderFactory.getHttpPostMethodFromUUID(u1);
 //        UUID u2 = HeaderFactory.getUUIDFromPostMethod(getMethod);
 //        boolean isget = HeaderFactory.isAGetHeader(getMethod);
 //        System.out.println("done");
+        } catch (InterruptedException ex) {
+            Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
 }

@@ -26,11 +26,11 @@ import static org.junit.Assert.*;
  */
 public class DataSendTest {
     
-    private int clientCount=60;
+    private int clientCount=150;
     private int passedClientCount= 0;
     private RandomDataPool dataPool = new RandomDataPool();
     private Digester digester = new Digester();
-    private int maximumDataSize = 1024*64;
+    private int maximumDataSize = 1024*4;
  //   private InetSocketAddress entranceAddress= new InetSocketAddress;
     
     private int entrancePort=10000;

@@ -95,10 +95,10 @@ public class ConnectivityTest {
      
      private void sendData() {
         try {
-            byte[] byb = new byte[arrayCapacity];
+            final byte[] byb = new byte[arrayCapacity];
             new Random().nextBytes(byb);
             sendHash = MessageDigest.getInstance("MD5").digest(byb);
-            AsynchronousSocketChannel s1 = AsynchronousSocketChannel.open();
+            final AsynchronousSocketChannel s1 = AsynchronousSocketChannel.open();
             s1.connect(new InetSocketAddress("127.0.0.1",40000), null, new CompletionHandler<Void, Void>() {
 
                 @Override
