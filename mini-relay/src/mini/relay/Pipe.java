@@ -28,6 +28,8 @@ public class  Pipe {
     private boolean inboundReady = false ;
     private boolean outboundReady = false;
     
+    private IPipeDelegate pipeDelegate;
+    
    ByteBuffer inboundToMajor = ByteBuffer.allocate(1024);
    ByteBuffer majorToOutbound = ByteBuffer.allocate(1024);
     
@@ -37,17 +39,19 @@ public class  Pipe {
     private boolean inboundDataDone = false ;
     private boolean majorDataDone = false ;
     
-    public Pipe(){
+    public Pipe(IPipeDelegate delegate){
         super();
         // register with a new UUID
+        this.pipeDelegate = delegate;
         UUID newUUID = UUID.randomUUID();
         pipeUUID = newUUID;
 //        PipeMap.map.put(newUUID, this);
 
     }
     
-    public Pipe(UUID pipeUUID){
+    public Pipe(UUID pipeUUID,IPipeDelegate delegate){
         super();
+        this.pipeDelegate = delegate;
         this.pipeUUID = pipeUUID;
 //        PipeMap.map.put(pipeUUID, this);
         
@@ -169,6 +173,7 @@ public class  Pipe {
         
 //        PipeMap.map.remove(this.pipeUUID); // remove from dictionary
 //        System.out.println("pipes remaining in dict: "+PipeMap.map.size());
+        pipeDelegate.pipeDone(this);
     }
     
     private void readFromMajor(){

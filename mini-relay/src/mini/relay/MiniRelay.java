@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  *
  * @author hadi
  */
-public class MiniRelay {
+public class MiniRelay implements IPipeDelegate{
 
     /**
      * @param args the command line arguments
@@ -67,7 +67,7 @@ public class MiniRelay {
         System.out.println("inbound received "+uuid);
         Pipe pipe;
         if (!(pipeMap.PipeExists(uuid))){
-            pipe = new Pipe(uuid);
+            pipe = new Pipe(uuid,this);
             pipeMap.map.put(uuid, pipe);
             this.connectMajorSocket(pipe);
         }
@@ -82,7 +82,7 @@ public class MiniRelay {
         System.out.println("outbound received "+uuid);
         Pipe pipe;
         if (!(pipeMap.PipeExists(uuid))){
-            pipe = new Pipe(uuid);
+            pipe = new Pipe(uuid,this);
             pipeMap.map.put(uuid, pipe);
             this.connectMajorSocket(pipe);
 
@@ -108,14 +108,14 @@ public class MiniRelay {
     }
     
    
-    private synchronized void handleNewlyAcceptedConnection(AsynchronousSocketChannel socket){
+    private synchronized void handleNewlyAcceptedConnection(final AsynchronousSocketChannel socket){
         System.out.println(socket);
         if (isMajorOnListen){
             this.newPipeRequested(socket);
         }else{
          //   ByteBuffer bb = ByteBuffer.allocate(1024);
 
-            ByteBuffer bb = ByteBuffer.allocate(HeaderFactory.getPostHeaderSize());
+            final ByteBuffer bb = ByteBuffer.allocate(HeaderFactory.getPostHeaderSize());
             socket.read(bb, bb, new CompletionHandler<Integer, ByteBuffer>() {
 
                 @Override
@@ -139,7 +139,7 @@ public class MiniRelay {
         
     }
     
-    private void initiateInboundSocket(Pipe newPipe){
+    private void initiateInboundSocket(final Pipe newPipe){
         try {
             AsynchronousSocketChannel inboundSock = AsynchronousSocketChannel.open();
             inboundSock.setOption(StandardSocketOptions.TCP_NODELAY, true);
@@ -149,7 +149,7 @@ public class MiniRelay {
 
                 @Override
                 public void completed(Void result, Pipe pipe) {
-                    System.out.println("inbound connected  UUID: "+newPipe.getUUID());
+//                    System.out.println("inbound connected  UUID: "+newPipe.getUUID());
                     ByteBuffer newBuffer = HeaderFactory.getHttpGetMethodFromUUID(newPipe.getUUID());
                     pipe.getInbound().write(newBuffer, pipe, new CompletionHandler<Integer, Pipe>() {
                         
@@ -193,7 +193,7 @@ public class MiniRelay {
         
     }
     
-    private void initiateOutboundSocket(Pipe newPipe){
+    private void initiateOutboundSocket(final Pipe newPipe){
         try {
             AsynchronousSocketChannel outboundSocket = AsynchronousSocketChannel.open();
             outboundSocket.setOption(StandardSocketOptions.TCP_NODELAY, true);
@@ -239,7 +239,7 @@ public class MiniRelay {
     
     private void newPipeRequested(AsynchronousSocketChannel majorSocket){
         
-            Pipe newPipe = new Pipe();
+            Pipe newPipe = new Pipe(this);
             
             newPipe.setMajor(majorSocket);
             newPipe.setMajorReady();
@@ -254,7 +254,7 @@ public class MiniRelay {
     private void startListening(){
         try {
             
-            AsynchronousServerSocketChannel serverSocket = AsynchronousServerSocketChannel.open().bind(this.listenAddress);
+            final AsynchronousServerSocketChannel serverSocket = AsynchronousServerSocketChannel.open().bind(this.listenAddress);
             serverSocket.accept(null,new CompletionHandler<AsynchronousSocketChannel, Void>() {
 
                 @Override
@@ -287,7 +287,7 @@ public class MiniRelay {
     public static void main(String[] args) {
         // TODO code application logic here
         
-        new MiniRelay(new InetSocketAddress(Integer.parseInt(args[0])),new InetSocketAddress(args[1],Integer.parseInt(args[2])), true);
+        new MiniRelay(new InetSocketAddress(Integer.parseInt(args[0])),new InetSocketAddress(args[1],Integer.parseInt(args[2])), Boolean.parseBoolean(args[3]));
         
         try {
             Thread.sleep(342234234);
@@ -301,5 +301,14 @@ public class MiniRelay {
             Logger.getLogger(MiniRelay.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
+    @Override
+    public synchronized void pipeDone(Pipe pipe) {
+        System.out.println("pipes: "+this.pipeMap.map.size());
+        this.pipeMap.map.remove(pipe.getUUID());
+        System.out.println("pipe deleted, remaining: "+this.pipeMap.map.size());
+    }
+
+    
     
 }

@@ -65,7 +65,7 @@ public class DataSendTest {
     //
     private void runServer(){
         try {
-            AsynchronousServerSocketChannel serverSocket = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(exitPort));
+            final AsynchronousServerSocketChannel serverSocket = AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(exitPort));
             serverSocket.accept(null,new CompletionHandler<AsynchronousSocketChannel, Void>() {
 
                 @Override
@@ -89,7 +89,7 @@ public class DataSendTest {
         
     }
     
-    private synchronized void readDataFromSocket(AsynchronousSocketChannel socket,ByteBuffer bb){
+    private synchronized void readDataFromSocket(final AsynchronousSocketChannel socket,final ByteBuffer bb){
         socket.read(bb, null, new CompletionHandler<Integer, Void>() {
 
             @Override
@@ -147,7 +147,7 @@ public class DataSendTest {
     
     
     
-    private void flushBufferToSocket(AsynchronousSocketChannel socket, ByteBuffer buffer){
+    private void flushBufferToSocket(final AsynchronousSocketChannel socket, ByteBuffer buffer){
         
         socket.write(buffer, buffer, new CompletionHandler<Integer, ByteBuffer>() {
 
@@ -176,10 +176,10 @@ public class DataSendTest {
         });
     }
     
-    private synchronized void sendData(byte[] data){
+    private synchronized void sendData(final byte[] data){
         
         try {
-            AsynchronousSocketChannel socket = AsynchronousSocketChannel.open();
+            final AsynchronousSocketChannel socket = AsynchronousSocketChannel.open();
             socket.connect(new InetSocketAddress("127.0.0.1", entrancePort), null, new CompletionHandler<Void, Void>() {
 
                 @Override
